@@ -3,6 +3,7 @@ import './style.css';
 const $canvas = document.querySelector('canvas');
 const context = $canvas.getContext('2d');
 const $score = document.querySelector('#score');
+const $bestScore = document.querySelector('#best-score');
 
 const BLOCK_SIZE = 20;
 const BOARD_WIDTH = 10;
@@ -14,6 +15,10 @@ $canvas.height = BLOCK_SIZE * BOARD_HEIGHT;
 $score.innerHTML = SCORE;
 
 context.scale(BLOCK_SIZE, BLOCK_SIZE);
+
+const BESTSCORES = [0, 0, 0];
+console.log(BESTSCORES[(0, 1, 2)]);
+$bestScore.innerHTML = [...BESTSCORES].forEach((score) => score);
 
 const board = [
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -38,6 +43,8 @@ const board = [
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 ];
 
+const COLORS = ['red', 'green', 'blue', 'yellow', 'purple'];
+
 const PIECES = [
   [
     [1, 1],
@@ -55,9 +62,14 @@ const PIECES = [
   ],
 ];
 
+function getRandomColor() {
+  return COLORS[Math.floor(Math.random() * COLORS.length)];
+}
+
 const piece = {
   position: { x: 0, y: 0 },
   shape: PIECES[Math.floor(Math.random() * PIECES.length)],
+  color: getRandomColor(),
 };
 
 let lastTimestamp = 0;
@@ -87,14 +99,22 @@ function update(timestamp = 0) {
 
 window.requestAnimationFrame(update);
 
+let currentPieceColor = piece.color;
+
 function draw() {
-  context.fillStyle = '#000';
+  currentPieceColor =
+    piece.color === currentPieceColor ? currentPieceColor : piece.color;
+  context.fillStyle = '#333';
   context.fillRect(0, 0, $canvas.width, $canvas.height);
 
   board.forEach((row, y) => {
     row.forEach((value, x) => {
+      context.strokeStyle = 'black';
+      context.lineWidth = 0.01;
+
+      context.strokeRect(x, y, 1, 1);
       if (value === 1) {
-        context.fillStyle = 'yellow';
+        context.fillStyle = currentPieceColor;
         context.fillRect(x, y, 1, 1);
       }
     });
@@ -103,11 +123,17 @@ function draw() {
   piece.shape.forEach((row, y) => {
     row.forEach((value, x) => {
       if (value) {
-        context.fillStyle = 'red';
+        context.strokeStyle = 'black';
+        context.lineWidth = 0.03;
+
+        context.strokeRect(x + piece.position.x, y + piece.position.y, 1, 1);
+        context.fillStyle = piece.color;
         context.fillRect(x + piece.position.x, y + piece.position.y, 1, 1);
       }
     });
   });
+
+  $score.innerHTML = SCORE;
 }
 
 document.addEventListener('keydown', (event) => {
@@ -159,6 +185,8 @@ function checkCollision() {
 }
 
 function solidifyPiece() {
+  piece.color = getRandomColor();
+
   piece.shape.forEach((row, y) => {
     row.forEach((value, x) => {
       if (value === 1) {
@@ -173,10 +201,12 @@ function solidifyPiece() {
   piece.shape = PIECES[Math.floor(Math.random() * PIECES.length)];
 
   SCORE += 10;
-  $score.innerHTML = SCORE;
-
+  let scoreToPush = [];
   if (checkCollision()) {
     alert('Sorry, game over!');
+    scoreToPush.push(SCORE);
+    BESTSCORES.splice();
+    SCORE = 0;
     board.forEach((row) => row.fill(0));
   }
 }
@@ -188,7 +218,6 @@ function deleteRows() {
     if (row.every((val) => val === 1)) {
       rowsToRemove.push(y);
       SCORE += 100;
-      $score.innerHTML = SCORE;
     }
   });
 
