@@ -3,7 +3,7 @@ import './style.css';
 const $canvas = document.querySelector('canvas');
 const context = $canvas.getContext('2d');
 const $score = document.querySelector('#score');
-const $bestScore = document.querySelector('#best-score');
+const $bestScore = document.querySelector('#best-scores');
 
 const BLOCK_SIZE = 20;
 const BOARD_WIDTH = 10;
@@ -15,10 +15,9 @@ $canvas.height = BLOCK_SIZE * BOARD_HEIGHT;
 $score.innerHTML = SCORE;
 
 context.scale(BLOCK_SIZE, BLOCK_SIZE);
-
-const BESTSCORES = [0, 0, 0];
-console.log(BESTSCORES[(0, 1, 2)]);
-$bestScore.innerHTML = [...BESTSCORES].forEach((score) => score);
+const BESTSCORES = localStorage.getItem('score')
+  ? localStorage.getItem('score').split(',')
+  : [0, 0, 0];
 
 const board = [
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -134,6 +133,11 @@ function draw() {
   });
 
   $score.innerHTML = SCORE;
+  BESTSCORES.sort((a, b) => b - a);
+  $bestScore.innerHTML = BESTSCORES.map((score) => `<li>${score}</li>`).join(
+    ' '
+  );
+  localStorage.setItem('score', [...BESTSCORES]);
 }
 
 document.addEventListener('keydown', (event) => {
@@ -205,7 +209,15 @@ function solidifyPiece() {
   if (checkCollision()) {
     alert('Sorry, game over!');
     scoreToPush.push(SCORE);
-    BESTSCORES.splice();
+    const scoreToRemove = BESTSCORES.findIndex((item) => item < scoreToPush[0]);
+    console.log(scoreToRemove);
+    if (scoreToRemove !== -1) {
+      BESTSCORES.splice(
+        scoreToRemove !== 2 ? scoreToRemove + 1 : scoreToRemove,
+        1,
+        scoreToPush[0]
+      );
+    }
     SCORE = 0;
     board.forEach((row) => row.fill(0));
   }
